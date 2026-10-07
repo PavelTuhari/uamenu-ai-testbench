@@ -1,0 +1,14 @@
+# результаты прогонов и всё, что может содержать данные стенда
+act-*/
+SelfTest*/
+VirtualCheckPrinter/
+*.fza
+*.log
+
+# файл для password --file, если его забыли затереть
+p.txt
+
+# настоящие ini стенда - только шаблоны версионируются
+cantina.ini
+selftest.ini
+targets.ini
