@@ -29,7 +29,7 @@ param(
   [Parameter(Mandatory = $true)][string]$InstallerDir,
   [string]$InstallDir = (Join-Path $env:SystemDrive 'Oracle26ai\product\26ai'),
   [int]$Port = 1522,
-  [string]$VaultService = 'oraclefree:local',
+  [string]$VaultService = 'frontarchive:freelocal',   # так пароль SYS найдёт FrontArchive (sys_vault = freelocal)
   [switch]$AskPassword
 )
 

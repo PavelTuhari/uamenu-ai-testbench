@@ -17,6 +17,21 @@
 считается сбоем. Он **не содержит** исходников, данных и паролей — это
 передаёт владелец отдельно, список в [docs/00-handover.md](docs/00-handover.md).
 
+## Быстрый путь: одна команда и задание для ИИ
+
+Если стенд — это **локальная Oracle Database Free** (бесплатная база с
+oracle.com; не путать с облачным «Always Free»), то скачивание свежего
+дистрибутива, установку с обходом известных ловушек и импорт копии
+кассовой схемы делает один скрипт:
+
+```bat
+python scripts\bootstrap_oracle_free.py --work D:\OracleFree --archive D:\handover\front.fza --frontarchive D:\RAD_Tokyo\Sources\FrontArchive
+```
+
+Задание для ИИ-агента, который это выполняет и чинит нюансы по ходу,
+с экономией токенов: **[AI-TASK.md](AI-TASK.md)**. Всё известное про
+локальную Oracle Free — [docs/07-oracle-free-local.md](docs/07-oracle-free-local.md).
+
 ## Путь целиком
 
 | Шаг | Документ | Итог шага |
@@ -28,12 +43,15 @@
 | 4 | [04-prices.md](docs/04-prices.md) | цены обновлены из бэк-офиса либо выставлены на стенде, касса их показывает |
 | 5 | [05-virtual-fiscal-printer.md](docs/05-virtual-fiscal-printer.md) | чек напечатан виртуальным фискальным принтером, файл чека на диске |
 | 6 | [06-test-act.md](docs/06-test-act.md) | акт: сценарий, снимки, журналы, таблица «ожидалось / получено», чего не проверяли |
+| 7 | [07-oracle-free-local.md](docs/07-oracle-free-local.md) | всё про локальную Oracle Database Free: что ставится, тихая установка и её ловушки, схема кассы в ней |
 
 ## Что здесь лежит
 
 ```
-docs/        шесть шагов, по одному файлу, с командами и ожидаемым выводом
-scripts/     check-prereqs.ps1 - проверка машины; install-oracle-free.ps1 - установка Oracle Free
+AI-TASK.md   задание ИИ-агенту: запустить скрипт, починить упавший шаг, отчитаться
+docs/        семь шагов, по одному файлу, с командами и ожидаемым выводом
+scripts/     bootstrap_oracle_free.py - скачать, поставить Oracle Free, импортировать схему;
+             install-oracle-free.ps1 - тихая установка (его зовёт bootstrap); check-prereqs.ps1 - проверка машины
 templates/   cantina.bench.ini - настройки кассы для стенда; selftest.bench.ini - сценарий прогона
 ```
 

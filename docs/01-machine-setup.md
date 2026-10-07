@@ -70,9 +70,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install-oracle-free.
 ```
 
 Пароль `SYS` скрипт создаёт случайным и кладёт в хранилище учётных данных
-Windows (служба `oraclefree:local`, пользователь `SYS`); в журнал
-установки он не попадает — журнал вычищается. Своё значение — ключ
-`-AskPassword` (ввод с клавиатуры, не отображается).
+Windows (служба `frontarchive:freelocal`, пользователь `SYS` — именно
+под этим именем его потом найдёт FrontArchive как `sys_vault = freelocal`);
+в журнал установки он не попадает — журнал вычищается. Своё значение —
+ключ `-AskPassword` (ввод с клавиатуры, не отображается).
+
+Всё это целиком — скачать, распаковать, поставить, импортировать схему —
+делает один скрипт, см. [07-oracle-free-local.md](07-oracle-free-local.md)
+и [AI-TASK.md](../AI-TASK.md).
 
 Проверка после установки:
 

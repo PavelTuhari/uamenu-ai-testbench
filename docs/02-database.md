@@ -47,7 +47,7 @@ title     = Клон фронта на локальной Oracle Free
 dsn       = localhost:1522/FREEPDB1
 user      = FA_FRONT
 vault     = freelocal
-sys_vault = oraclefree:local   ; где лежит пароль SYS (см. шаг 1.3)
+sys_vault = freelocal          ; пароль SYS лежит как frontarchive:freelocal / SYS (шаг 1.3)
 role      = clone
 ```
 
