@@ -16,7 +16,8 @@ Row 'сборка' 'RAD Studio 19 (bcc32)' (Test-Path $dcc) $dcc
 $rsvars = Join-Path $StudioBin 'rsvars.bat'
 Row 'сборка' 'rsvars.bat' (Test-Path $rsvars) $rsvars
 $msb = Get-Command msbuild -ErrorAction SilentlyContinue
-Row 'сборка' 'msbuild в PATH (иначе через rsvars)' ($null -ne $msb) $(if ($msb) { $msb.Source } else { 'после rsvars.bat появится' })
+# msbuild появляется в PATH после rsvars.bat - его отсутствие само по себе не беда
+Row 'сборка, не обяз.' 'msbuild в PATH' ($null -ne $msb) $(if ($msb) { $msb.Source } else { 'после call rsvars.bat появится' })
 
 # Oracle Instant Client
 $ic = $env:ORACLE_CLIENT_DIR
