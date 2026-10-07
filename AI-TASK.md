@@ -105,5 +105,8 @@ ini show free-front: cantina.ini, selftest.ini в пакете CANTINA_INI
 2. Если что-то чинил — что именно и почему (две строки на случай).
 3. Чего не делал: например, «UAC нажимал человек», «UN4PUBLIC не ставил».
 
-Дальше — `docs/03-till-config.md`: настроить кассу на эту базу и снять акт
+Дальше — `docs/08-uamenu-install.md`: положить кассу отдельной папкой
+рядом с UnaDesktop (не в `Program Files`, не внутрь UnaDesktop) и
+прочитать, почему `cantina.ini` нельзя брать чужой; затем
+`docs/03-till-config.md`: настроить кассу на эту базу и снять акт
 (`docs/06-test-act.md`).

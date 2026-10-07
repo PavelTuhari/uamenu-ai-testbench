@@ -44,12 +44,13 @@ python scripts\bootstrap_oracle_free.py --work D:\OracleFree --archive D:\handov
 | 5 | [05-virtual-fiscal-printer.md](docs/05-virtual-fiscal-printer.md) | чек напечатан виртуальным фискальным принтером, файл чека на диске |
 | 6 | [06-test-act.md](docs/06-test-act.md) | акт: сценарий, снимки, журналы, таблица «ожидалось / получено», чего не проверяли |
 | 7 | [07-oracle-free-local.md](docs/07-oracle-free-local.md) | всё про локальную Oracle Database Free: что ставится, тихая установка и её ловушки, схема кассы в ней |
+| 8 | [08-uamenu-install.md](docs/08-uamenu-install.md) | касса как отдельная папка рядом с UnaDesktop; что в ней лежит; порядок поиска и роль `cantina.ini` |
 
 ## Что здесь лежит
 
 ```
 AI-TASK.md   задание ИИ-агенту: запустить скрипт, починить упавший шаг, отчитаться
-docs/        семь шагов, по одному файлу, с командами и ожидаемым выводом
+docs/        восемь шагов, по одному файлу, с командами и ожидаемым выводом
 scripts/     bootstrap_oracle_free.py - скачать, поставить Oracle Free, импортировать схему;
              install-oracle-free.ps1 - тихая установка (его зовёт bootstrap); check-prereqs.ps1 - проверка машины
 templates/   cantina.bench.ini - настройки кассы для стенда; selftest.bench.ini - сценарий прогона
