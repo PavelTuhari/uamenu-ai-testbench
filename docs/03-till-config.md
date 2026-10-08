@@ -21,8 +21,9 @@ msbuild UAMenu.cbproj /t:Build /p:Config=Debug /p:Platform=Win32
 
 ## 3.1 `cantina.ini`
 
-Полный разбор всех ключей — в приватном репозитории,
-`docs/cantina-ini.md` (около 300 ключей). Для стенда важен короткий
+Полный разбор всех ключей — в открытом репозитории
+[cantina-ini](https://github.com/PavelTuhari/cantina-ini), `docs/cantina-ini.md`
+(около 450 ключей), там же 65 настоящих примеров файла. Для стенда важен короткий
 набор; шаблон — [templates/cantina.bench.ini](../templates/cantina.bench.ini).
 
 | Ключ | Что | Для стенда |
