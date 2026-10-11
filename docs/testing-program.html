@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Программа тестирования UAMenu</title>
+<meta name="description" content="Полная программа приёмочного тестирования кассы UAMenu: синхронизация, продажи, приёмка, инвентаризация, оплаты, X/Z, отчёты, виды товара, заказы, поиск.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+:root{
+  --bg:#f6f4ee; --paper:#fffdf8; --ink:#1e1c18; --muted:#6b665c; --line:#d9d3c6;
+  --accent:#8a3b12; --accent-ink:#fff; --ok:#2e7d32; --chip:#ece7db; --code:#f0ebe0;
+  --mono:"Cascadia Mono","Consolas","JetBrains Mono",ui-monospace,monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#17160f; --paper:#1f1d16; --ink:#ece6d8; --muted:#a39c8c; --line:#3a362c;
+  --accent:#e0864f; --accent-ink:#1a120b; --ok:#7bc47f; --chip:#2b2820; --code:#272418; }}
+:root[data-theme="dark"]{
+  --bg:#17160f; --paper:#1f1d16; --ink:#ece6d8; --muted:#a39c8c; --line:#3a362c;
+  --accent:#e0864f; --accent-ink:#1a120b; --ok:#7bc47f; --chip:#2b2820; --code:#272418; }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans)}
+a{color:var(--accent)}
+.wrap{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:20px 16px;border-right:1px solid var(--line);background:var(--paper)}
+nav h1{font-size:17px;margin:0 0 4px;letter-spacing:.01em}
+nav .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:3px 10px;font-size:12.5px;cursor:pointer;user-select:none}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+nav input[type=search]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;margin-bottom:12px}
+.toc a{display:flex;justify-content:space-between;gap:8px;text-decoration:none;color:var(--ink);padding:5px 6px;border-radius:6px;font-size:14px}
+.toc a:hover{background:var(--chip)}
+.toc a.hidden{display:none}
+.toc .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;white-space:nowrap}
+.toc .n.done{color:var(--ok)}
+.tools{display:grid;gap:6px;margin-top:16px}
+button{font:inherit;font-size:13.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,.chip:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding:28px clamp(16px,4vw,56px) 80px;max-width:980px}
+.status{color:var(--muted);font-size:13px;margin-bottom:20px}
+section.part{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 28px 20px;margin:0 0 22px}
+section.part.hidden{display:none}
+section.part .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);font-size:12.5px;margin:14px 0 -6px}
+section.part .meta .chip{cursor:default}
+.md h1{font-size:24px;line-height:1.25;margin:16px 0 8px;text-wrap:balance}
+.md h2{font-size:18px;margin:26px 0 8px;padding-top:12px;border-top:1px dashed var(--line)}
+.md p,.md ul,.md ol{max-width:72ch}
+.md code{font:13.5px var(--mono);background:var(--code);padding:1px 5px;border-radius:4px}
+.md pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto}
+.md pre code{background:none;padding:0}
+.md table{border-collapse:collapse;margin:10px 0;font-size:14.5px;display:block;overflow-x:auto;max-width:100%}
+.md th,.md td{border:1px solid var(--line);padding:5px 9px;vertical-align:top;text-align:left}
+.md th{background:var(--chip)}
+.md li.step{list-style:none;margin-left:-22px;display:flex;gap:9px;align-items:flex-start}
+.md li.step input{margin-top:5px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.md li.step.done label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.md li.step label{cursor:pointer}
+.md blockquote{margin:10px 0;padding:6px 14px;border-left:3px solid var(--accent);color:var(--muted)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr}
+  nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:16px}
+  section.part{padding:6px 16px 16px}
+}
+@media (prefers-reduced-motion:no-preference){ .toc a{transition:background .12s} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h1>Программа тестирования UAMenu</h1>
+  <div class="sub">Собрано 2026-10-11 · разделов 13 · шагов 181</div>
+  <div class="chips" id="variants" role="group" aria-label="Вариант кассы"></div>
+  <input type="search" id="q" placeholder="Искать по тексту программы…" aria-label="Поиск">
+  <div class="toc" id="toc"></div>
+  <div class="tools">
+    <button class="primary" id="export">Выгрузить акт (.md)</button>
+    <button id="reset">Сбросить отметки</button>
+    <button id="theme">Тема: авто</button>
+  </div>
+</nav>
+<main>
+  <div class="status" id="status"></div>
+  <div id="parts"></div>
+</main>
+</div>
+
+<script type="text/plain" id="md-00-intro.md"><!-- variants: ALL -->
+# Программа полного тестирования кассы UAMenu
+
+Это программа приёмочного тестирования «по полной»: все режимы кассы, все
+способы оплаты, отчёты, виды товара, поиск, синхронизация с бэк-офисом.
+Каждый раздел — отдельный файл `docs/testing-program/NN-*.md`; страница
+`testing-program.html` собирает их, показывает оглавление, даёт отмечать
+выполненные шаги и выгрузить акт. Шаги привязаны к настоящим клавишам,
+формам и пакетам кассы (имена файлов исходников указаны, чтобы спорный
+шаг можно было проверить по коду, а не по памяти).
+
+## Варианты касс
+
+Вариант задаётся двумя ключами `cantina.ini` (`ucLogin.cpp:334`), и от него
+зависит, какие разделы применимы:
+
+| Метка | `GlobalType` | `Style` | Что это |
+|---|---|---|---|
+| **CASSA** | `CASSA` | пусто | обычная розничная касса: сканер, чек, оплата |
+| **UNIREST** | `UNIREST` / `REST` / `RESTH` | `DOSTAVKA`, `PRODZACAZ`, `RESTH` | столовая, ресторан, доставка: окно заказов, официанты, столы |
+| **TS** | любой | `TS` | тачскрин: кнопки из `VTS_BUTTONS`, оплата через `TSPayment` |
+| **SIZES** | `CASSA` | пусто, `BarCodeAridon=true` | одежда и ткани: товар с размером и длиной |
+| **SELF** | любой | `ShowMenuSelfService=true` | киоск самообслуживания |
+
+В начале каждого раздела стоит пометка `variants:` — на странице это
+фильтр. `ALL` — раздел нужен для любой кассы.
+
+## Перед началом
+
+1. Касса запускается и входит в базу (раздел 3 стенда, `03-till-config.md`).
+2. **Фискальный принтер — виртуальный:** `FiscalPrinter=VirtualFP`. Это
+   читается сначала из `TMS_INIT_PARAMS`, потом из файла — проверить
+   `select pvalue from tms_init_params where upper(pname)='FISCALPRINTER'`.
+   Чеки падают в `VirtualCheckPrinter\ГГГГ_М_Д\VPCheck_ЧЧ_ММ_СС.txt`.
+3. База — **тестовая** (`bonuspos_self24` или клон на Oracle Free). В
+   рабочую базу эта программа не выполняется: Z-отчёт, служебное
+   внесение и закрытие смены необратимы.
+4. Под рукой: один обычный товар со штрихкодом, один весовой, один
+   размерный (для SIZES), одна дисконтная карта (`TMS_DCARD`), одна
+   карта столовой (для UNIREST), купон, номер отложенного чека.
+5. Терминал и MIA — в тестовом режиме: `MIAMode=simulate` или
+   `MIAUseTestPay=true`; банковский терминал — эмулятор или `POSTermEnabled=false`
+   с записью «не проверяли» в акте.
+
+## Как читается шаг
+
+Каждый шаг — строка с флажком. На странице флажок кликается и
+запоминается в браузере; «Выгрузить акт» собирает все разделы в markdown
+с отметками. В тексте:
+
+* `F5`, `Ctrl+Shift+F9` — клавиша кассы (`fMenu.dfm`, меню «Действия»);
+* `selftest: newcheck` — та же операция командой автопрогона (`uSelfTest.cpp`),
+  если шаг можно прогнать без рук;
+* `SQL:` — запрос, которым подтверждается результат в базе;
+* **Ожидается** — что считается успехом; всё иное пишется в акт как есть.
+
+## Правила
+
+* Доказательство — снимок или файл чека или вывод SQL. Без него шаг не
+  считается выполненным.
+* Пароли в акт не попадают: ни в снимках окна входа, ни в SQL.
+* Пробные записи в общую базу убираются, и в акте есть строка, чем
+  проверено, что следа не осталось.
+* «Не применимо» — тоже результат: пишется, почему (нет оборудования,
+  вариант кассы другой).
+</script>
+<script type="text/plain" id="md-01-sync.md"><!-- variants: ALL -->
+# 1. Синхронизация данных с бэк-офисом
+
+Касса не хранит ничего локально: справочники и цены — витрины
+(материализованные представления `MV*`) в схеме фронта, которые
+наполняются из бэк-офиса через DB link `BONUS2019_07.WORLD`; продажи
+пишутся прямо в таблицы фронта (`TMDB_COMENZ`, `TMDB_COMENZD`), откуда
+бэк-офис их забирает сам. Выгрузки файлами у кассы нет (`dtmod.cpp`,
+поиск по `send/export/upload` пуст), поэтому «синхронизация» — это
+обновление витрин и проверка, что продажа видна на той стороне.
+
+## 1.1 Обновление справочников из меню
+
+Меню «Работа с базой» / «Lucru cu BD» (`ubdw.cpp`) видно только при
+непустом `sys_context('envunirest','DBLink')` и, для кассира,
+`ShowMenuDataBase=true`.
+
+- [ ] Открыть «Работа с базой». Снимок `sync-01-bdw`.
+- [ ] Переключатель «Обновить справочники с сервера» → «Обновить».
+      При `RefreshUnirest=true` касса зовёт `Unirest_Mv_V.refersh_mv`
+      (именно с такой опечаткой), иначе `bar$links.setupAllLinks('0')`
+      (`dtmod.cpp:1332`).
+- [ ] Дождаться конца; записать длительность. Снимок `sync-02-done`.
+- [ ] SQL: `select mview_name, last_refresh_date, staleness from user_mviews
+      order by last_refresh_date desc` — у витрин свежая дата.
+
+**Ожидается:** без ошибок; `MVPR_PRICES_ACT` и `MVMS_UNIV` обновлены
+«сейчас». Если бэк-офиса на стенде нет — касса сообщает об ошибке линка и
+**продолжает работать**; это записывается как «DB link не настраивался».
+
+## 1.2 Цена доехала до чека
+
+- [ ] В бэк-офисе (или вручную в `MVPR_PRICES_ACT`, если линка нет) изменить
+      цену тестового товара на заметную (например, +1.11).
+- [ ] Обновить витрины (1.1) либо `begin unirest_mv_v.refresh_mv_one('MVPR_PRICES_ACT'); end;`.
+- [ ] SQL: `select * from vpr_prices where sc = <код>` — новая цена.
+- [ ] Новый чек, отсканировать товар — в чеке новая цена. Снимок `sync-03-price`.
+- [ ] Вернуть цену назад тем же путём, проверить SQL ещё раз.
+
+**Ожидается:** цена в чеке равна `VPR_PRICES`. Касса цену не кэширует:
+изменение видно со следующего сканирования.
+
+## 1.3 Продажа видна на стороне базы
+
+- [ ] Провести чек на два товара, оплатить наличными, напечатать (F12).
+- [ ] SQL: `select nrdoc, data, suma, state from tmdb_comenz where nrdoc = <номер чека>`
+      и `select sc, cant, pret from tmdb_comenzd where nrdoc = <номер>`.
+- [ ] Если бэк-офис подключён — убедиться у него, что чек появился (запрос
+      владельца; обычно через те же таблицы по линку с другой стороны).
+- [ ] Отменить тестовый чек по правилам раздела 2 либо оставить в тестовой базе
+      и записать номер в акт.
+
+**Ожидается:** строки чека в базе совпадают с чеком на виртуальном принтере
+по сумме и количеству позиций.
+
+## 1.4 Пересоздание синонимов и чистка заказов
+
+- [ ] «Обновить с пересозданием синонимов» (вариант 2) — только администратор.
+      Снимок результата.
+- [ ] SQL: `select count(*) from user_objects where status='INVALID'` до и после.
+- [ ] «Очистить базу заказов» с датой год назад — на тестовой базе;
+      касса зовёт `unirest_util.DELETE_OLD_PERIOD_COMENZ` (`ubdw.cpp:39`).
+      Записать, сколько строк ушло.
+
+**Ожидается:** невалидных объектов не стало больше; чистка удаляет только
+старше указанной даты.
+
+## 1.5 Старт кассы с недоступным бэк-офисом
+
+- [ ] Сделать линк недоступным (выключить сеть к бэк-офису или временно
+      неверный пароль линка на стенде).
+- [ ] Запустить кассу с `RefreshOnLoad=true`.
+- [ ] Снимок сообщения; касса дошла до главной формы.
+
+**Ожидается:** касса **запускается всегда**. Сообщение об ошибке обновления
+— допустимо; невозможность работать — дефект стенда или кассы, в акт.
+</script>
+<script type="text/plain" id="md-02-sales.md"><!-- variants: CASSA SIZES UNIREST -->
+# 2. Продажи: чек от открытия до печати
+
+Форма продаж — `Tfhvbb` (`Uhvbb.cpp`), логика — `TDTM` (`dtmod.cpp`).
+Поиск товара: `bon.Find_tovar`, добавление: `bon.Insert_tovar`
+(`dtmod.cpp:2327`, `:2437`). Клавиши — из меню «Действия» (`fMenu.dfm`).
+
+## 2.1 Простой чек
+
+- [ ] Новый чек (после печати касса открывает его сама: `NewBon()`,
+      `dtmod.cpp:3357`). `selftest: newcheck`.
+- [ ] Сканировать штрихкод товара → позиция в чеке, количество 1.
+      `selftest: item,<код>,1`.
+- [ ] Ввести количество **до** сканирования в поле `Cant.` → позиция с этим
+      количеством. `selftest: item,<код>,3`.
+- [ ] Клавиша `/` — курсор в количество в сетке; изменить, Enter.
+- [ ] `Ctrl+Num+` / `Ctrl+Num-` — прибавить и убавить введённое число
+      (`UpdateCant`, `Uhvbb.cpp:1448`).
+- [ ] Снимок `sale-01-items`. `selftest: shot,sale-01-items,check`.
+- [ ] Сумма внизу равна сумме позиций.
+
+**Ожидается:** позиции и суммы верны; количество меняется без пересканирования.
+
+## 2.2 Ручной ввод штрихкода
+
+- [ ] Клавиша `*` переключает в поле ручного ввода (`edBarCode`); ввести код,
+      Enter.
+- [ ] Ввести несуществующий код → сообщение «не найден», чек не изменился.
+- [ ] Ввести код с лишним символом при `CheckBarcode=true` → отказ;
+      при `BarcodeAddon=true` расширенный код принимается.
+
+**Ожидается:** ошибки ввода не ломают чек и не добавляют «пустых» позиций.
+
+## 2.3 Скидка на позицию
+
+- [ ] Встать на позицию, `Ctrl+F3` → форма скидки (процент или сумма,
+      `Uadddiscont`; нужен `EnderRedus=true`).
+- [ ] Ввести 10 % → цена позиции пересчитана, в базе
+      `Disc_Unirest.ADD_DISCONT` (`dtmod.cpp:9548`).
+- [ ] Снимок `sale-02-discount`.
+
+**Ожидается:** скидка видна в чеке и на виртуальном чеке после печати.
+
+## 2.4 Отмена чека
+
+- [ ] `F5` → при `CancelCheckByPIN=true` запрос PIN; ввести → чек пуст.
+      `selftest: cancel`.
+- [ ] С `BlockCancel` (например, во время открытой мультиоплаты) → отказ с
+      сообщением.
+- [ ] SQL: у отменённого чека `state` отменён, позиций нет.
+
+**Ожидается:** отмена требует права; отменённый чек не попадает в итоги.
+
+## 2.5 Отложенный чек
+
+Видно при `ShowMenuDeferred=true`.
+
+- [ ] Набрать чек, `F7` «Отложить» → чек исчез, номер записан.
+- [ ] `Ctrl+A` список отложенных — чек в списке. Снимок `sale-03-deferred`.
+- [ ] `F8` вернуть по номеру → позиции на месте.
+- [ ] Попробовать Z-отчёт при отложенном чеке → отказ
+      (`Unirest_Util.CHECK_RESERV_Z`, раздел 6).
+
+**Ожидается:** отложенный чек восстанавливается полностью; Z при нём невозможен.
+
+## 2.6 Возврат
+
+- [ ] `F3` режим возврата (`ToggleStateReturn`, `dtmod.cpp:10924`;
+      нужен `UseReturn=true`) → индикатор режима на форме. Снимок.
+- [ ] Сканировать товар → позиция с отрицательной суммой; оплата возвращает
+      деньги. `selftest: return`.
+- [ ] `F9` возврат чека целиком (`UseWholeReturn=true`): ввести номер чека из
+      2.1 → все позиции с минусом (`bon.rest`, `dtmod.cpp:4349`).
+- [ ] Напечатать → на виртуальном чеке слово возврата и минус.
+
+**Ожидается:** суммы возврата равны исходным; номер основания в чеке.
+
+## 2.7 Печать и повтор
+
+- [ ] `F12` печать → файл в `VirtualCheckPrinter\…\VPCheck_*.txt`,
+      касса открыла новый чек. `selftest: print`.
+- [ ] Открыть файл: шапка, позиции, итог, способ оплаты, номер.
+      Снимок `sale-04-receipt`.
+- [ ] `Ctrl+R` повтор последнего чека → второй файл с тем же содержимым.
+- [ ] `Ctrl+W` просмотр чеков (`ShowMenuPreview=true`) — чек в списке.
+- [ ] `F11` сохранить чек без печати → в базе есть, на принтере нет.
+
+**Ожидается:** содержимое файла чека совпадает с экраном и с
+`TMDB_COMENZD` по позициям и сумме.
+
+## 2.8 Консультант, клиент, информация о товаре
+
+- [ ] `F1` выбор консультанта (`ConsultEnabled=true`) → имя в чеке.
+- [ ] «Выбрать клиента» / «Очистить клиента» из меню → клиент в шапке чека.
+- [ ] «Информация о товаре» → остаток и цена без добавления в чек.
+
+**Ожидается:** все три не меняют позиции чека.
+</script>
+<script type="text/plain" id="md-03-receiving.md"><!-- variants: CASSA UNIREST -->
+# 3. Приёмка товара и специальные документы
+
+**Честно сразу:** отдельной формы приёмки (intrare, recepție, приход) в
+кассе **нет** — по исходникам такие слова встречаются только в итогах
+кассы («Intrari» — приход денег) и в служебном внесении. Приёмка
+товара ведётся в бэк-офисе, касса её только отражает через витрины
+(раздел 1).
+
+Что в кассе есть — **специальные документы**: та же продажная форма, но
+документ создаётся с другим типом через `DTM->CreateSpecialDoc(DocType)`
+(`dtmod.cpp:13463`). Типы и кнопки настраиваются в базе, в интерфейсе
+тачскрина `TSSelDocType` (id 13), и показываются пунктом меню «Выбор
+операции» (`ShowMenuSelDocType=true`, форма `uSelDocType.cpp`).
+
+## 3.1 Есть ли у этой кассы специальные документы
+
+- [ ] SQL: `select * from vts_buttons where interface_id = 13` (точное
+      имя представления — по описанию владельца; это кнопки «Выбор операции»).
+- [ ] Если строк нет — раздел «не применимо», в акт: «специальные документы
+      не настроены».
+
+## 3.2 Документ прихода, если он настроен
+
+- [ ] Меню «Выбор операции» → кнопка документа прихода. Снимок `recv-01-seldoc`.
+- [ ] Набрать две позиции с количеством, как в продаже.
+- [ ] Закрыть документ принятым в этом типе способом (F12 или F11).
+- [ ] SQL: `select nrdoc, doc_type, state from tmdb_comenz where nrdoc = <номер>`
+      — `doc_type` равен типу прихода, не продаже.
+- [ ] Итоги кассы («Итоги»/`casa.cpp`) — документ **не** вошёл в выручку.
+
+**Ожидается:** документ записан с нужным `doc_type`; в фискальный принтер
+ничего не ушло; в Z-отчёт он не попадает.
+
+## 3.3 Что проверять у бэк-офиса
+
+- [ ] Приход, сделанный в бэк-офисе, после обновления витрин виден в кассе
+      остатком («Информация о товаре») и ценой — это и есть «приёмка»
+      с точки зрения кассы.
+</script>
+<script type="text/plain" id="md-04-inventory.md"><!-- variants: CASSA SIZES -->
+# 4. Инвентаризация
+
+Отдельной формы нет: инвентаризация — **режим продажной формы**. Он
+включается контекстом Oracle `INVENTR` (`main->Inventr = GetContext("INVENTR")`,
+`dtmod.cpp:488`), который ставится на стороне базы (для пользователя или
+сессии). В этом режиме каждый новый документ создаётся как
+`CreateSpecialDoc(InventrDocType)` (`InventrDocType` из ini, по
+умолчанию 2; `dtmod.cpp:3347`), а не как чек.
+
+## 4.1 Включить режим
+
+- [ ] Выставить контекст по инструкции владельца (пакет `ENVUNIREST` или
+      `dbms_session.set_context`), перезапустить кассу.
+- [ ] На форме: при `Inventr=1` появился выбор секции `UnDBSect`
+      (`Uhvbb.cpp:183`). Снимок `inv-01-mode`.
+- [ ] Клавиши `F5`, `F12`, `Ctrl+R` **не действуют** (`Uhvbb.cpp:2085`).
+- [ ] X/Z-отчёт отказывает, если нет `ZXReportByAdminOrInventr`
+      (`dtmod.cpp:6430`).
+
+**Ожидается:** касса ясно показывает режим; печать чеков невозможна.
+
+## 4.2 Ввод остатков
+
+- [ ] Выбрать секцию. Сканировать товар с количеством 5; тот же товар ещё
+      раз с 2.
+- [ ] Весовой товар — через `Ctrl+1` «Взвесить» или вводом веса.
+- [ ] Размерный товар (SIZES) — размер и длина спрашиваются как в продаже
+      (раздел 8).
+- [ ] Закрыть документ принятым способом (как настроено для `InventrDocType`;
+      обычно `F11` сохранить).
+- [ ] SQL: `select sc, sum(cant) from tmdb_comenzd where nrdoc = <номер> group by sc`
+      — 7 и вес, `doc_type` документа = `InventrDocType`.
+
+**Ожидается:** повторное сканирование суммируется или даёт вторую строку —
+записать, как именно ведёт себя эта касса (зависит от `Insert_tovar`), и
+что бэк-офис из этого ожидает.
+
+## 4.3 Выключить режим
+
+- [ ] Снять контекст, перезапустить.
+- [ ] Новый документ снова чек; `F12` печатает.
+
+**Ожидается:** после выхода из режима ни один инвентаризационный документ
+не попал в выручку («Итоги») и в Z.
+</script>
+<script type="text/plain" id="md-05-payments.md"><!-- variants: ALL -->
+# 5. Оплаты: наличные, карта банка, MIA, подарочная карта, мультиоплата
+
+## 5.1 Наличные и сдача
+
+- [ ] Чек на 343.95; в поле оплаты (`edPay`) 350, Enter. `selftest: pay,350`.
+- [ ] Сдача 6.05 на экране и в файле чека.
+- [ ] `pay,total` — точная сумма, сдача 0.
+- [ ] Меньше суммы → отказ или долг по настройке; записать.
+
+**Ожидается:** сдача считается верно; при `PrintAfterPay=true` Enter в поле
+оплаты сразу печатает (`Uhvbb.cpp:1474`).
+
+## 5.2 Безналичная оплата переключателем
+
+- [ ] `Shift+Z` (`InvertPayType`) → признак безнала в шапке. Снимок.
+- [ ] Напечатать → в файле чека способ оплаты «безнал».
+
+## 5.3 Банковский POS-терминал
+
+`Ctrl+E` → `TermCard` → `DTM->POSTermPay` (`dtmod.cpp:11642`). Драйверы
+в `Drivers\POSTerm\`: IP/Verifone, Ingenico, BPAY, VF, APB-socket. Ключи:
+`POSTermEnabled`, `POSTermSocket`, `POSTermSocketHost/Port` (8882),
+`POSTermPort` (9999), `POSTermIngenico`, `POSTermLog`,
+`POSTermPrintRCPTBefore`, `POSTermPrintRCPTAfterAsNewCheck`.
+
+- [ ] Терминал или эмулятор подключён; «POS Проверка связи» (`Ctrl+Shift+T`)
+      → успех. Снимок `pay-01-pos-conn`. Без терминала — весь 5.3 «не применимо».
+- [ ] Чек, `Ctrl+E` → запрос к терминалу, подтверждение → чек закрыт картой.
+- [ ] Слип печатается до или после чека по `POSTermPrintRCPTBefore` /
+      `…AfterAsNewCheck` — записать, как настроено, и что вышло на
+      виртуальный принтер.
+- [ ] «POS Копия чека» (`Ctrl+Shift+C`) → копия слипа.
+- [ ] «POS Отчет X» / «POS Отчет Z» (`Ctrl+Shift+X` / `Ctrl+Shift+Z`) →
+      отчёт терминала; Z только в конце дня.
+- [ ] Отказ терминала (вынуть карту, отменить на пинпаде) → касса показала
+      отказ, чек **остался открытым**, оплаты нет.
+- [ ] Журнал `POSTermLog` — записи запроса и ответа без PAN целиком.
+
+**Ожидается:** успех и отказ оба обрабатываются; чек не закрывается без
+подтверждения терминала.
+
+## 5.4 MIA (оплата по QR)
+
+Меню «MIA» (`mItemMIA`), форма `uMIAPayments.cpp`, REST `uMIARest.cpp`:
+`/v2/auth/token`, `/v2/mia/qr`, `/v2/mia/qr/{id}`, `…/cancel`,
+`/v2/mia/test-pay`. Режимы `MIAMode`: `printer` (QR на чеке), `rest`,
+`simulate`. Секреты `MIAClientSecret`, `MIAApiSecrect` — только пометки
+`@secret:` (раздел секретов).
+
+- [ ] `MIAMode=simulate`: чек, MIA → QR на экране, «оплачено» без сети.
+      `selftest: mia,<сумма>`. Снимок `pay-02-mia-sim`.
+- [ ] `MIAMode=rest` с `MIAUseTestPay=true` на тестовом контуре: токен
+      получен, QR создан, `test-pay` подтвердил. `selftest: miarest,<сумма>`.
+- [ ] Таймаут (`MIAPollTimeoutSec` маленький, не платить) → касса отменяет QR
+      (`/cancel`), чек открыт.
+- [ ] Повторный запрос после таймаута — новый QR, старый не оплачивается.
+- [ ] В файле чека — признак оплаты MIA и id операции.
+
+**Ожидается:** оплата отмечается только по подтверждению; таймаут безопасен.
+
+## 5.5 Мультиоплата
+
+`Ctrl+K`, форма `MultiPayments.cpp`, таблица `TMDB_COMENZ_PAY`, справочник
+`PAY_TYPES`. Нужен `MultiPayment=true`.
+
+- [ ] Чек на 500; `Ctrl+K` → окно; 200 наличными, 300 картой.
+      `selftest: multipay` / `addpay,<id>,200` / `closemultipay`.
+      Снимок `pay-03-multi`.
+- [ ] `F12` во время открытой мультиоплаты → отказ (`fMenu.cpp:325`).
+- [ ] Закрыть мультиоплату → чек печатается с двумя строками оплаты.
+- [ ] SQL: `select pay_id, suma from tmdb_comenz_pay where nrdoc = <номер>` — две строки.
+- [ ] Ограничения `multipaymentRestrictedPayIDList` — запрещённый метод не
+      предлагается.
+
+**Ожидается:** сумма частей равна чеку; чек нельзя напечатать до закрытия окна.
+
+## 5.6 Подарочная карта и сертификаты
+
+- [ ] `Ctrl+G` (`UseCardPodaroc=true`) → режим оплаты подарочной картой,
+      сканировать карту (тип в `vms_dcard`) → сумма списана.
+- [ ] `Ctrl+L` сертификаты (`Certificates.cpp`) → выдать сертификат,
+      погасить его в следующем чеке.
+- [ ] Остаток карты `F2` «Обновить остаток».
+
+## 5.7 Бонусы и купоны лояльности
+
+- [ ] Приложить карту: `selftest: card,<номер>,1` (дисконтная) или `,6`
+      (столовая). Снимок `pay-04-card`.
+- [ ] `Ctrl+Shift+F6` списать бонусы: `selftest: bonus,max`.
+- [ ] Купон: `selftest: coupon,<штрихкод>`; выдача `couponsell`; справка `couponinfo`.
+- [ ] POS API лояльности: `selftest: posapi,member,<карта>` / `posapi,txn` /
+      `posapi,void,test` — ответы в `APILog.txt`.
+- [ ] Кошелёк: `walletshow`, `wallet,<баланс>,<ставка>`, `walletapply`.
+
+**Ожидается:** списание не превышает баланс; `void` возвращает начисление.
+
+## 5.8 Служебное внесение и изъятие
+
+- [ ] `Ctrl+Shift+F7` (`CashInOut.cpp`) → внести 100: `selftest: cashin,100`.
+- [ ] Изъять 50 (`CashOutEnabled=true`): `selftest: cashout,50`.
+- [ ] Файлы на виртуальном принтере — два служебных документа.
+- [ ] «Расходный кассовый ордер» (`CashOutOrder.cpp`) — заполнить и
+      напечатать.
+- [ ] X-отчёт после — внесение и изъятие в нём видны (раздел 6).
+
+**Ожидается:** суммы в X совпадают с внесённым и изъятым.
+</script>
+<script type="text/plain" id="md-06-xz-reports.md"><!-- variants: ALL -->
+# 6. X- и Z-отчёты, смена
+
+`Ctrl+Shift+F3` X, `Ctrl+Shift+F9` Z → `Tmain::PrintXReport/PrintZReport`
+(`fMenu.cpp:1875`) → `DTM->PrintZXReport` (`dtmod.cpp:6409`) →
+`FPrinter->PrintZXReport`, журнал `Pk_X_Z_Report.write_log`
+(`PosWriteLogXZ=true`). Ключи: `ZXReportByPIN`, `ZXReportByAdminOrInventr`,
+`CheckDailySum`, `QueryDailySum`, `CloseByZ` (по умолчанию true — после Z
+касса перезапускается), `PrintTMReportAfterX`, `PrintCurrencyReportAfterX/Z`.
+
+## 6.1 Открытие смены
+
+- [ ] «Открытие смены в фиск. принтере» (`miFPOpenDay`) → документ на
+      виртуальном принтере, дата и кассир.
+
+## 6.2 X-отчёт
+
+- [ ] После чеков раздела 2 и 5: `Ctrl+Shift+F3`. `selftest: xreport`.
+      При `ZXReportByPIN` — PIN.
+- [ ] Файл X на виртуальном принтере: выручка по способам оплаты, возвраты,
+      внесение/изъятие, число чеков. Снимок `xz-01-x`.
+- [ ] Сверить с SQL: `select count(*), sum(suma) from tmdb_comenz where
+      trunc(data)=trunc(sysdate) and state = <проведён>` и с «Итоги» (`casa.cpp`).
+- [ ] Повторный X — те же цифры, смена не закрыта.
+
+**Ожидается:** X не меняет состояние; цифры совпадают с базой и «Итогами».
+
+## 6.3 Z-отчёт: запреты
+
+- [ ] Отложить чек (`F7`), затем `Ctrl+Shift+F9` → отказ
+      (`Unirest_Util.CHECK_RESERV_Z`). Снимок `xz-02-z-refused`.
+- [ ] Вернуть и закрыть отложенный чек.
+- [ ] В режиме инвентаризации без `ZXReportByAdminOrInventr` → отказ.
+- [ ] При `CheckDailySum=true` и расхождении (`pk_x_z_report.check_daily_sum`) →
+      предупреждение; записать текст.
+
+## 6.4 Z-отчёт
+
+- [ ] `Ctrl+Shift+F9` → PIN при `ZXReportByPIN`. `selftest: zreport`.
+- [ ] Файл Z на виртуальном принтере: итог смены, номер Z. Снимок `xz-03-z`.
+- [ ] При `CloseByZ=true` касса перезапустилась; после входа счётчики
+      смены нулевые.
+- [ ] Меню «Список Z-отчётов» (`uxzlog.cpp`, таблица `txzlog`, `ftype=0`)
+      — новая строка с суммой Z.
+- [ ] SQL: `select * from txzlog where ftype = 0 order by fdate desc` —
+      первая строка = только что снятый Z.
+- [ ] Чек после Z → новая смена, нумерация продолжается.
+
+**Ожидается:** Z закрывает смену ровно один раз; журнал и принтер сходятся.
+
+## 6.5 Отчёты терминала
+
+- [ ] «POS Отчет X» и «POS Отчет Z» (раздел 5.3) — после Z кассы; суммы по
+      картам в них равны строке «карта» в Z кассы.
+
+## 6.6 Печать диапазона чеков
+
+- [ ] «Печать диапазона чеков» (`BulkReprint.cpp`) — с первого по последний
+      чек смены → файлы на принтере по числу чеков.
+</script>
+<script type="text/plain" id="md-07-front-reports.md"><!-- variants: ALL -->
+# 7. Встроенные отчёты фронта («Отчёты» / «Rapoarte»)
+
+Список отчётов не в коде, а в таблице `TMDB_REPORTS` (`COD`, `DENUMIREA`,
+`TEMPLATE`, `FUNCTION`, `AUTOHIDE`). `FillReportsMenu` (`fMenu.cpp:1630`)
+строит пункт на строку; клик → `Totc` (`reports.cpp`): выполняет
+`begin <FUNCTION>; end;` с фильтрами из `VMDB_REPCFG` (бармен, официант,
+блюда, состояние, тип оплаты, тип счёта, номер комнаты, категория,
+смена) и рисует шаблон из `TEMPLATE_DIR` через `MakeUniReport`.
+Меню видно при `ShowMenuReports=true`.
+
+## 7.1 Состав
+
+- [ ] SQL: `select cod, denumirea, template, function, autohide from tmdb_reports order by cod`
+      — список в акт целиком.
+- [ ] Пункты меню «Отчёты» совпадают со списком (кроме `AUTOHIDE`).
+      Снимок `rep-01-menu`.
+- [ ] Для каждого `TEMPLATE` файл есть в каталоге шаблонов
+      (`Templates\*.fr3`); отсутствующие — в акт.
+
+## 7.2 Каждый отчёт
+
+Для **каждой** строки `TMDB_REPORTS`:
+
+- [ ] Открыть, выставить фильтр «сегодня», выполнить. Снимок `rep-<cod>`.
+- [ ] Отчёт построился без ошибки Oracle; цифры дня совпадают с X
+      (раздел 6) там, где отчёт о выручке.
+- [ ] Печать в файл или на виртуальный принтер — если отчёт печатный.
+- [ ] Пустой период → отчёт пустой, а не ошибка.
+
+**Ожидается:** ни один отчёт не падает; суммы сходятся с X и «Итогами».
+
+## 7.3 Создание отчёта
+
+- [ ] «Создать новый отчёт» (`N7`, `fMenu.cpp:179`) → строка в `TMDB_REPORTS`;
+      задать тестовые `FUNCTION`/`TEMPLATE`, увидеть пункт в меню.
+- [ ] Удалить тестовую строку, проверить SQL, что её нет.
+
+## 7.4 «Итоги»
+
+- [ ] Меню «Итоги»/«Total» (`casa.cpp`): приход («Intrari»), расход,
+      остаток в кассе. Сверить с внесением/изъятием раздела 5.8 и X.
+      Снимок `rep-02-total`.
+</script>
+<script type="text/plain" id="md-08-goods.md"><!-- variants: CASSA SIZES -->
+# 8. Виды товара: простой, весовой, с размером и длиной
+
+## 8.1 Простой товар
+
+- [ ] Штрихкод EAN-13 → позиция, цена из `VPR_PRICES`.
+- [ ] Тот же товар второй раз → по настройке `Insert_tovar`: вторая строка или
+      прибавка количества; записать.
+- [ ] Товар с несколькими штрихкодами (разные упаковки) → каждый находит
+      тот же `SC`.
+- [ ] Товар с несколькими совпадениями → окно выбора (`uSeveralTovar`,
+      `ShowModalSeveralTovar`, `dtmod.cpp:3479`). Снимок `goods-01-several`.
+
+## 8.2 Весовой товар
+
+- [ ] Штрихкод весов (префикс и вес в коде) → количество = вес из штрихкода
+      (`bWeigth` в `Find_tovar`).
+- [ ] `Ctrl+1` «Взвесить» (`Scales.cpp`, `ScalesI.cpp`; драйверы
+      `Drivers\Scales\`) с подключёнными или эмулированными весами → вес в
+      поле количества. Без весов — «не применимо».
+- [ ] Цена позиции = вес × цена за кг, округление как в чеке.
+
+## 8.3 Товар с размером и длиной (SIZES)
+
+Работает в режиме штрихкодов Aridon: `BarCodeAridon=true`, `UseSzLen=true`
+(по умолчанию true). После выбора из списка совпадений касса зовёт
+`DTM->EnterSzLen(sc)` (`dtmod.cpp:2426`, `:9469`) → форма `TSzLen`
+(`uszlen.cpp`) с полями **размер** и **длина**, затем
+`Bon.EnterSzLen(:pcod,:p_sz,:p_len)`. При `CustomBarcodesMode=ZOR` поле
+длины подписано «Цвет». **Ширины у товара в кассе нет** — поле с таким
+смыслом в исходниках отсутствует; если нужна ширина, это задача бэк-офиса
+и доработки `TSzLen`.
+
+- [ ] Сканировать артикул одежды (например `CARDIGAN`) → список размеров;
+      выбрать → форма размер/длина. Снимок `goods-02-szlen`.
+- [ ] Оставить размер пустым → отказ «Trebuie completata marimea!».
+- [ ] Ввести размер `L`, длину `100` → позиция; в чеке размер и длина
+      (в файле чека и SQL: `select * from tmdb_comenzd where nrdoc=<номер>`
+      — поля размера и длины заполнены).
+- [ ] Ткань: длина `2.5` → количество 2.5, цена за метр × 2.5.
+- [ ] Режим `ZOR` (если используется): поле «Цвет» принимает текст.
+- [ ] Возврат размерного товара (`F3`) — спрашивает размер снова, возвращает
+      тот же.
+
+**Ожидается:** без размера продать нельзя; размер и длина доходят до базы и
+до чека; ширина — в акт как «нет в кассе».
+
+## 8.4 Цена и скидка товара
+
+- [ ] «Изменить цену» (`Ctrl+F2`, если включено) → цена меняется с правом;
+      без права — отказ.
+- [ ] Акционная цена (`Цена по справ.` vs `Цена продажи` в сетке) показана и
+      в чеке применена акционная.
+</script>
+<script type="text/plain" id="md-09-orders.md"><!-- variants: UNIREST -->
+# 9. Заказы («Заказы» / «Comenzi»)
+
+**Что это на самом деле.** Окно «Заказы» (`order.cpp`, `Tforder`,
+`DTM->load_forder()`, `dtmod.cpp:883`) — заказы столовой, ресторана и
+доставки: столы, официанты, разделение счёта. Данные —
+`VMDB_COMENZ_RESTAURANT` и `VMDB_COMENZD`. Поведение зависит от `Style`
+(`DOSTAVKA`, `PRODZACAZ`, `RESTH`, `TS`).
+
+**Заказа товара наружу — поставщику или в бэк-офис — в кассе нет.** Такие
+заказы делаются в бэк-офисе; касса может только передать клиента в
+бухгалтерию (`unirest_link_util.send_client_buh`, `order.cpp:2031`). Если
+«заказ наружу» нужен на кассе, это новая задача; в акт — «не реализовано».
+
+## 9.1 Заказ
+
+- [ ] Меню «Заказы». При `PinOfficiant=true` — PIN официанта. Снимок `ord-01-list`.
+- [ ] `Insert` → новый заказ (стол, официант, число гостей).
+- [ ] Добавить позиции (`addAction1`, `order.cpp:473`) — три блюда, одно с
+      количеством 2.
+- [ ] SQL: `select * from vmdb_comenzd where nr_comand = <номер>` — три строки.
+
+## 9.2 Изменения
+
+- [ ] Дубликат заказа (`yunirest.Dubl`) → новый номер, те же позиции.
+- [ ] Дисконтная карта к заказу (`disc_unirest.pay_disc_card`) → скидка в итоге.
+- [ ] Разделить счёт (`yunirest.complet_razbiv`) → два счёта на тех же гостей.
+      Снимок `ord-02-split`.
+
+## 9.3 Закрытие
+
+- [ ] «Закрыть» → `close_comand` (`order.cpp:855`): `yunirest.can_close`
+      разрешил, `complet_tmdb_beg` создал чек, `throw_off_order` снял заказ.
+- [ ] Оплатить чек (раздел 5), напечатать → файл чека с позициями заказа.
+- [ ] Заказ, который закрыть нельзя (например, неоплаченный долг) → отказ с
+      причиной от `can_close`.
+
+**Ожидается:** закрытый заказ превращается ровно в один чек; открытых
+копий не остаётся.
+
+## 9.4 Доставка (`Style=DOSTAVKA`)
+
+- [ ] Новый клиент из заказа → «отправить в бухгалтерию» → клиент есть в
+      бэк-офисе (запрос владельца).
+- [ ] Время оплаты и адрес в заказе печатаются в чеке.
+</script>
+<script type="text/plain" id="md-10-search.md"><!-- variants: CASSA SIZES UNIREST -->
+# 10. Товар не сканируется: поиск по названию, артикулу, коду, цене
+
+Клавиши продажной формы (`Tfhvbb::FormKeyPress`, `Uhvbb.cpp:1796`),
+работают при `ManualSearchDenum=true` (`Uhvbb.cpp:1875`) и соответствующих
+`ParamSearchBy*Enabled`:
+
+| Клавиша | Поиск | Режим `Find_tovar` |
+|---|---|---|
+| `+` | по названию | `smDenumirea` |
+| `Shift` + `+` | по артикулу (`FindTovarByArticol` меняет их местами) | артикул |
+| `-` | по коду | код |
+| `Shift` + `-` | по короткому коду (`FindTovarByShortCode`) | короткий код |
+| `)` | по цене (`SearchByPriceKey`) | цена |
+
+Окно — `TfPartDenum` (`partDenum.cpp`), результат идёт в
+`FindInsertTovar(text, qty, NULL, mode)`; несколько совпадений →
+`uSeveralTovar`. **`F3` — это не поиск, а режим возврата.**
+
+## 10.1 Повреждённый штрихкод
+
+- [ ] Сканировать нечитаемый код (заклеить часть) → «не найден», чек цел.
+- [ ] `+` → ввести часть названия, например `DENIM` → список совпадений
+      (`SORTI DENIM C` и прочие). Снимок `find-01-name`.
+- [ ] Выбрать нужный → позиция в чеке с правильной ценой.
+- [ ] Ввести количество до поиска → учтено.
+
+## 10.2 По артикулу и коду
+
+- [ ] `Shift`+`+` → артикул `LM289` → `SORTI TRICOTAJ LM289`.
+- [ ] `-` → внутренний код `5649` → тот же товар.
+- [ ] `Shift`+`-` → короткий код (если у кассы есть `FindTovarByShortCode`).
+
+## 10.3 По цене
+
+- [ ] `)` → `350` → все товары по 350.00; выбрать. Снимок `find-02-price`.
+
+## 10.4 Граничные случаи
+
+- [ ] Пустая строка поиска → ничего не добавлено.
+- [ ] Название кириллицей и латиницей — оба находят (кодировка базы
+      `CL8MSWIN1251`; на сервере с нерусской локалью см. `encoding.md`).
+- [ ] Тысяча совпадений (`%`) → окно открывается за приемлемое время,
+      записать секунды.
+- [ ] `ManualSearchDenum=false` → клавиши ничего не делают.
+
+**Ожидается:** любой найденный товар попадает в чек тем же путём, что и
+сканированный (`Insert_tovar`), с той же ценой и скидками.
+</script>
+<script type="text/plain" id="md-11-ts-self.md"><!-- variants: TS SELF -->
+# 11. Тачскрин и самообслуживание
+
+`Style=TS`: модули `TS\` (`TS`, `TSController`, `TSDispatcher`, `TSKB`,
+`TSPay`, `TSPOSTermIP`, `TSOrdList`), кнопки из `VTS_BUTTONS`; печать идёт
+через `TSPayment()` / `POSTermPay()` вместо `F12`. Киоск —
+`uSelfService.cpp`, пункт меню при `ShowMenuSelfService=true`.
+
+- [ ] Кнопки экрана совпадают с `select * from vts_buttons order by
+      interface_id, pos`. Снимок `ts-01-buttons`.
+- [ ] Чек через кнопки: категория → товар → оплата (`selftest: ts,<команда>,<аргумент>`).
+- [ ] Клавиатура `TSKB` вводит количество и поиск по названию.
+- [ ] Оплата картой с тачскрина (`TSPOSTermIP`) — как 5.3.
+- [ ] Киоск: сценарий покупателя без кассира, чек на виртуальный принтер.
+- [ ] Экран покупателя (`customer-display.md`): иконки отрисованы, а не
+      `"icon-text":"e5…"` — шрифт Material Symbols установлен.
+</script>
+<script type="text/plain" id="md-12-act.md"><!-- variants: ALL -->
+# 12. Акт
+
+Акт собирается кнопкой «Выгрузить акт» на странице: в него попадают все
+разделы с отметками шагов. Руками дописываются таблица результата и
+список «не проверяли».
+
+## Шапка
+
+| | |
+|---|---|
+| Касса | `UAMenu v.<версия>`, `PosID`, вариант (CASSA / UNIREST / TS / SIZES / SELF) |
+| База | схема, сервер, версия Oracle, `select count(*) from user_objects where status='INVALID'` |
+| Машина | Windows, `ACP` (должно быть 1251), `NLS_LANG` клиента |
+| cantina.ini | `sha256` из `cantina_ini.get_hash()` и id версии в бэк-офисе (`v_cantina_ini_current`) |
+| Принтер | `VirtualFP`; реальный — не подключали |
+| Дата, кто | |
+
+## Таблица результата
+
+| Раздел | Шагов | Выполнено | Ожидалось / получено | Доказательство |
+|---|---|---|---|---|
+| 1. Синхронизация | | | | `sync-*.jpg`, SQL |
+| 2. Продажи | | | | `sale-*.jpg`, `VPCheck_*.txt` |
+| 3. Приёмка | | | | |
+| 4. Инвентаризация | | | | |
+| 5. Оплаты | | | | |
+| 6. X/Z | | | | `xz-*.jpg`, `txzlog` |
+| 7. Отчёты | | | | `rep-*.jpg` |
+| 8. Товар | | | | |
+| 9. Заказы | | | | |
+| 10. Поиск | | | | |
+| 11. TS / киоск | | | | |
+
+## Не проверяли
+
+Перечислить словами: оборудование, которого не было; варианты кассы,
+которых нет на стенде; разделы «не применимо» с причиной.
+
+## Дефекты
+
+Для каждого: шаг, ожидалось, получено, снимок, воспроизводимость, запись
+в `selftest.log` / `license.log` / `APILog.txt`, если есть.
+
+## Уборка
+
+- [ ] Тестовые чеки отменены или оставлены в тестовой базе — записать номера.
+- [ ] Временные изменения цен возвращены (раздел 1.2), SQL подтверждает.
+- [ ] Контекст `INVENTR` снят, `cantina.ini` стенда сохранён (`ini save`).
+</script>
+
+<script>
+(function(){
+  const SECTIONS = [{"file": "00-intro.md", "title": "Программа полного тестирования кассы UAMenu", "variants": ["ALL"]}, {"file": "01-sync.md", "title": "1. Синхронизация данных с бэк-офисом", "variants": ["ALL"]}, {"file": "02-sales.md", "title": "2. Продажи: чек от открытия до печати", "variants": ["CASSA", "SIZES", "UNIREST"]}, {"file": "03-receiving.md", "title": "3. Приёмка товара и специальные документы", "variants": ["CASSA", "UNIREST"]}, {"file": "04-inventory.md", "title": "4. Инвентаризация", "variants": ["CASSA", "SIZES"]}, {"file": "05-payments.md", "title": "5. Оплаты: наличные, карта банка, MIA, подарочная карта, мультиоплата", "variants": ["ALL"]}, {"file": "06-xz-reports.md", "title": "6. X- и Z-отчёты, смена", "variants": ["ALL"]}, {"file": "07-front-reports.md", "title": "7. Встроенные отчёты фронта («Отчёты» / «Rapoarte»)", "variants": ["ALL"]}, {"file": "08-goods.md", "title": "8. Виды товара: простой, весовой, с размером и длиной", "variants": ["CASSA", "SIZES"]}, {"file": "09-orders.md", "title": "9. Заказы («Заказы» / «Comenzi»)", "variants": ["UNIREST"]}, {"file": "10-search.md", "title": "10. Товар не сканируется: поиск по названию, артикулу, коду, цене", "variants": ["CASSA", "SIZES", "UNIREST"]}, {"file": "11-ts-self.md", "title": "11. Тачскрин и самообслуживание", "variants": ["TS", "SELF"]}, {"file": "12-act.md", "title": "12. Акт", "variants": ["ALL"]}];
+  const KEY = 'uamenu-testprog-v1';
+  let state = {}; try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { state = {}; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} };
+  let filter = 'ALL';
+  const texts = {};
+  for (const s of SECTIONS) texts[s.file] = document.getElementById('md-' + s.file).textContent;
+
+  marked.use({ gfm: true, breaks: false });
+
+  function render(){
+    const parts = document.getElementById('parts'); parts.innerHTML = '';
+    const toc = document.getElementById('toc'); toc.innerHTML = '';
+    for (const s of SECTIONS) {
+      const sec = document.createElement('section'); sec.className = 'part'; sec.id = 'sec-' + s.file; sec.dataset.file = s.file;
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.append('Варианты: '); for (const v of s.variants) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = v; meta.append(c); }
+      const src = document.createElement('span'); src.textContent = '· ' + s.file; meta.append(src);
+      const md = document.createElement('div'); md.className = 'md';
+      md.innerHTML = marked.parse(texts[s.file].replace(/^\s*<!--[^>]*-->\s*/, ''));
+      let i = 0;
+      md.querySelectorAll('li').forEach(li => {
+        const cb = li.querySelector(':scope > input[type=checkbox]');
+        if (!cb) return;
+        const id = s.file + '#' + (i++);
+        cb.disabled = false; cb.id = 'cb-' + id.replace(/[^\w-]/g, '_'); cb.checked = !!state[id];
+        li.className = 'step' + (cb.checked ? ' done' : '');
+        const label = document.createElement('label'); label.htmlFor = cb.id;
+        while (cb.nextSibling) label.append(cb.nextSibling);
+        li.append(label);
+        cb.addEventListener('change', () => { state[id] = cb.checked; if (!cb.checked) delete state[id]; save(); li.classList.toggle('done', cb.checked); counts(); });
+      });
+      sec.append(meta, md); parts.append(sec);
+      const a = document.createElement('a'); a.href = '#sec-' + s.file; a.dataset.file = s.file;
+      a.innerHTML = '<span></span><span class="n"></span>'; a.firstChild.textContent = s.title; toc.append(a);
+    }
+    counts(); applyFilter();
+  }
+
+  function counts(){
+    let all = 0, done = 0;
+    for (const s of SECTIONS) {
+      const sec = document.getElementById('sec-' + s.file);
+      const cbs = sec.querySelectorAll('li.step input'); const d = [...cbs].filter(c => c.checked).length;
+      all += cbs.length; done += d;
+      const n = document.querySelector('.toc a[data-file="' + s.file + '"] .n');
+      n.textContent = cbs.length ? d + '/' + cbs.length : ''; n.classList.toggle('done', cbs.length && d === cbs.length);
+    }
+    document.getElementById('status').textContent = 'Фильтр: ' + filter + ' · отмечено ' + done + ' из ' + all + ' шагов' + (location.protocol.startsWith('http') ? ' · разделы подтягиваются из testing-program/*.md' : ' · разделы вшиты в страницу');
+  }
+
+  function applyFilter(){
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    for (const s of SECTIONS) {
+      const okV = filter === 'ALL' || s.variants.includes('ALL') || s.variants.includes(filter);
+      const okQ = !q || texts[s.file].toLowerCase().includes(q);
+      document.getElementById('sec-' + s.file).classList.toggle('hidden', !(okV && okQ));
+      document.querySelector('.toc a[data-file="' + s.file + '"]').classList.toggle('hidden', !(okV && okQ));
+    }
+    counts();
+  }
+
+  const vbox = document.getElementById('variants');
+  for (const v of ["ALL", "CASSA", "UNIREST", "TS", "SIZES", "SELF"]) {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = v === 'ALL' ? 'Все' : v; b.setAttribute('aria-pressed', v === 'ALL');
+    b.addEventListener('click', () => { filter = v; vbox.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === b)); applyFilter(); });
+    vbox.append(b);
+  }
+  document.getElementById('q').addEventListener('input', applyFilter);
+  document.getElementById('reset').addEventListener('click', () => { if (confirm('Снять все отметки?')) { state = {}; save(); render(); } });
+  document.getElementById('export').addEventListener('click', () => {
+    const lines = ['# Акт тестирования UAMenu', '', 'Дата: ' + new Date().toLocaleString('ru-RU'), 'Вариант кассы: ' + filter, ''];
+    for (const s of SECTIONS) {
+      if (document.getElementById('sec-' + s.file).classList.contains('hidden')) continue;
+      let i = 0;
+      const body = texts[s.file].replace(/^\s*<!--[^>]*-->\s*/, '').replace(/^(\s*)- \[[ x]\]/gm, (m, sp) => sp + '- [' + (state[s.file + '#' + (i++)] ? 'x' : ' ') + ']');
+      lines.push(body.trim(), '');
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uamenu-test-act-' + new Date().toISOString().slice(0, 10) + '.md'; a.click();
+  });
+  const tbtn = document.getElementById('theme'); const modes = ['auto', 'light', 'dark']; let mode = 'auto';
+  try { mode = localStorage.getItem(KEY + ':theme') || 'auto'; } catch(e) {}
+  const applyTheme = () => { if (mode === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = mode; tbtn.textContent = 'Тема: ' + ({auto:'авто', light:'светлая', dark:'тёмная'})[mode]; };
+  tbtn.addEventListener('click', () => { mode = modes[(modes.indexOf(mode) + 1) % 3]; try { localStorage.setItem(KEY + ':theme', mode); } catch(e) {} applyTheme(); });
+  applyTheme();
+
+  render();
+
+  // Динамические вставки: при показе по http подтянуть свежие md рядом со страницей
+  if (location.protocol.startsWith('http')) {
+    Promise.all(SECTIONS.map(s => fetch('testing-program/' + s.file, { cache: 'no-store' }).then(r => r.ok ? r.text() : null).catch(() => null)))
+      .then(res => { let changed = false; res.forEach((t, k) => { if (t && t !== texts[SECTIONS[k].file]) { texts[SECTIONS[k].file] = t; changed = true; } }); if (changed) render(); });
+  }
+})();
+</script>
+</body>
+</html>
